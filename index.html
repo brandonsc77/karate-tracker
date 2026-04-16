@@ -499,21 +499,29 @@ button:active{
   gap:16px;
 }
 
-.tabbar{
+.tabbar-wrap{
   position:fixed;
-  left:50%;
   bottom:12px;
-  transform:translateX(-50%);
+  left:0;
+  right:0;
+  display:flex;
+  justify-content:center;
+  z-index:100;
+  pointer-events:none;
+}
+
+.tabbar{
+  pointer-events:all;
   width:min(920px,calc(100vw - 20px));
   background:rgba(18,18,20,.92);
   backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
   border:1px solid rgba(255,255,255,.08);
   box-shadow:0 20px 40px rgba(0,0,0,.45);
   border-radius:26px;
   display:grid;
   grid-template-columns:repeat(3,1fr);
   padding:8px;
-  z-index:100;
 }
 
 .tabbar button{
@@ -603,11 +611,13 @@ button:active{
   </section>
 </div>
 
+<div class="tabbar-wrap">
 <nav class="tabbar">
   <button class="active" data-view="dashboard">Overview</button>
   <button data-view="calendar">Calendar</button>
   <button data-view="history">History</button>
 </nav>
+</div>
 
 <script>
 const BELTS = ["White","Yellow","Orange","Blue","Green","Advanced Green","Purple","Advanced Purple","Brown","Advanced Brown","Red","Advanced Red","Black"];
