@@ -140,6 +140,12 @@ button:active{
   border-color:#37204f;
 }
 
+.stripe-btn{
+  background:linear-gradient(135deg,#991b1b,#ef4444);
+  color:#fff;
+  border-color:transparent;
+}
+
 .tile-grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -273,14 +279,103 @@ button:active{
   letter-spacing:-0.03em;
 }
 
-.tile-actions{
+/* ── Stripe section ── */
+.stripe-section{
+  margin-top:14px;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px 14px;
+}
+
+.stripe-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.stripe-label{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+.stripe-status{
+  font-size:12px;
+  font-weight:900;
+  padding:4px 10px;
+  border-radius:999px;
+}
+
+.stripe-status.stripe-ready{
+  background:rgba(245,158,11,.15);
+  color:#fcd34d;
+  border:1px solid rgba(245,158,11,.3);
+}
+
+.stripe-status.stripe-progress{
+  background:var(--gray-pill);
+  color:var(--gray-text);
+  border:1px solid #35353b;
+}
+
+.stripe-status.stripe-maxed{
+  background:var(--green-bg);
+  color:#86efac;
+  border:1px solid #1f5f34;
+}
+
+.stripe-dots{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.stripe-dot{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:2px solid #3f3f46;
+  background:transparent;
+  transition:background .2s, border-color .2s;
+}
+
+.stripe-dot.earned{
+  background:linear-gradient(135deg,#991b1b,#ef4444);
+  border-color:#ef4444;
+  box-shadow:0 0 8px rgba(239,68,68,.4);
+}
+
+.stripe-classes{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.stripe-classes strong{
+  color:var(--text);
+}
+
+/* ── Tile action rows ── */
+.tile-actions-top{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2,1fr);
   gap:8px;
   margin-top:14px;
 }
 
-.tile-actions button{
+.tile-actions-bottom{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin-top:8px;
+}
+
+.tile-actions-top button,
+.tile-actions-bottom button{
   padding:12px 10px;
 }
 
@@ -446,7 +541,7 @@ button:active{
   .tile-name{font-size:20px}
   .calendar-grid{gap:6px}
   .day-cell{min-height:72px;padding:10px 4px}
-  .tile-actions{grid-template-columns:1fr}
+  .tile-actions-bottom{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -456,7 +551,7 @@ button:active{
     <div class="hero-row">
       <div>
         <h1>Karate Tracker 2026</h1>
-        <div class="sub">Attendance tracker for your 4 kids. 24 classes are required before they can test for the next belt.</div>
+        <div class="sub">Attendance tracker for your 4 kids. 24 classes to promote · 8 classes to stripe test.</div>
       </div>
       <div class="pill" id="todayPill">Today</div>
     </div>
@@ -516,16 +611,18 @@ button:active{
 
 <script>
 const BELTS = ["White","Yellow","Orange","Blue","Green","Advanced Green","Purple","Advanced Purple","Brown","Advanced Brown","Red","Advanced Red","Black"];
-const REQUIRED = 24;
+const REQUIRED = 24;        // classes needed to promote
+const STRIPE_REQUIRED = 8;  // classes needed to be stripe-test eligible
+const MAX_STRIPES = 3;      // stripes per belt
 const ACTIVE_YEAR = 2026;
 const STORAGE_KEY = "karate-tracker-2026-v10";
 
 const DEFAULT_STATE = {
   "kids": [
-    {"id":1,"name":"Caroline","belt":"Advanced Brown","classesSincePromo":3,"classes2026":19,"attendedToday":false,"sick":false},
-    {"id":2,"name":"Viviann","belt":"Brown","classesSincePromo":29,"classes2026":20,"attendedToday":false,"sick":false},
-    {"id":3,"name":"Addyson","belt":"Brown","classesSincePromo":28,"classes2026":19,"attendedToday":false,"sick":false},
-    {"id":4,"name":"James","belt":"Brown","classesSincePromo":30,"classes2026":21,"attendedToday":false,"sick":false}
+    {"id":1,"name":"Caroline","belt":"Advanced Brown","classesSincePromo":4,"classes2026":20,"attendedToday":false,"sick":false,"currentStripe":0,"classesSinceStripe":4},
+    {"id":2,"name":"Viviann","belt":"Brown","classesSincePromo":29,"classes2026":20,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":29},
+    {"id":3,"name":"Addyson","belt":"Brown","classesSincePromo":28,"classes2026":19,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":28},
+    {"id":4,"name":"James","belt":"Brown","classesSincePromo":30,"classes2026":21,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":30}
   ],
   "attendanceHistory": [
     {"id":"Caroline-2026-01-06-present","child":"Caroline","type":"present","date":"2026-01-06"},
@@ -544,6 +641,9 @@ const DEFAULT_STATE = {
     {"id":"Caroline-2026-03-04-present","child":"Caroline","type":"present","date":"2026-03-04"},
     {"id":"Caroline-2026-03-24-present","child":"Caroline","type":"present","date":"2026-03-24"},
     {"id":"Caroline-2026-03-25-present","child":"Caroline","type":"present","date":"2026-03-25"},
+    {"id":"Caroline-2026-04-14-present","child":"Caroline","type":"present","date":"2026-04-14"},
+    {"id":"Caroline-2026-04-15-present","child":"Caroline","type":"present","date":"2026-04-15"},
+    {"id":"Caroline-2026-04-16-present","child":"Caroline","type":"present","date":"2026-04-16"},
 
     {"id":"Viviann-2026-01-06-present","child":"Viviann","type":"present","date":"2026-01-06"},
     {"id":"Viviann-2026-01-07-present","child":"Viviann","type":"present","date":"2026-01-07"},
@@ -562,6 +662,8 @@ const DEFAULT_STATE = {
     {"id":"Viviann-2026-03-10-present","child":"Viviann","type":"present","date":"2026-03-10"},
     {"id":"Viviann-2026-03-24-present","child":"Viviann","type":"present","date":"2026-03-24"},
     {"id":"Viviann-2026-03-25-present","child":"Viviann","type":"present","date":"2026-03-25"},
+    {"id":"Viviann-2026-04-14-present","child":"Viviann","type":"present","date":"2026-04-14"},
+    {"id":"Viviann-2026-04-15-present","child":"Viviann","type":"present","date":"2026-04-15"},
 
     {"id":"Addyson-2026-01-06-present","child":"Addyson","type":"present","date":"2026-01-06"},
     {"id":"Addyson-2026-01-07-present","child":"Addyson","type":"present","date":"2026-01-07"},
@@ -580,6 +682,8 @@ const DEFAULT_STATE = {
     {"id":"Addyson-2026-03-10-present","child":"Addyson","type":"present","date":"2026-03-10"},
     {"id":"Addyson-2026-03-24-present","child":"Addyson","type":"present","date":"2026-03-24"},
     {"id":"Addyson-2026-03-25-present","child":"Addyson","type":"present","date":"2026-03-25"},
+    {"id":"Addyson-2026-04-14-present","child":"Addyson","type":"present","date":"2026-04-14"},
+    {"id":"Addyson-2026-04-15-present","child":"Addyson","type":"present","date":"2026-04-15"},
 
     {"id":"James-2026-01-06-present","child":"James","type":"present","date":"2026-01-06"},
     {"id":"James-2026-01-07-present","child":"James","type":"present","date":"2026-01-07"},
@@ -599,13 +703,6 @@ const DEFAULT_STATE = {
     {"id":"James-2026-03-10-present","child":"James","type":"present","date":"2026-03-10"},
     {"id":"James-2026-03-24-present","child":"James","type":"present","date":"2026-03-24"},
     {"id":"James-2026-03-25-present","child":"James","type":"present","date":"2026-03-25"},
-
-    {"id":"Caroline-2026-04-14-present","child":"Caroline","type":"present","date":"2026-04-14"},
-    {"id":"Caroline-2026-04-15-present","child":"Caroline","type":"present","date":"2026-04-15"},
-    {"id":"Viviann-2026-04-14-present","child":"Viviann","type":"present","date":"2026-04-14"},
-    {"id":"Viviann-2026-04-15-present","child":"Viviann","type":"present","date":"2026-04-15"},
-    {"id":"Addyson-2026-04-14-present","child":"Addyson","type":"present","date":"2026-04-14"},
-    {"id":"Addyson-2026-04-15-present","child":"Addyson","type":"present","date":"2026-04-15"},
     {"id":"James-2026-04-14-present","child":"James","type":"present","date":"2026-04-14"},
     {"id":"James-2026-04-15-present","child":"James","type":"present","date":"2026-04-15"},
 
@@ -625,7 +722,6 @@ const DEFAULT_STATE = {
 
 function isoToday(){
   // FIX: Use local date components instead of toISOString() which returns UTC.
-  // This prevents dates from shifting when your local time and UTC are on different calendar days.
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12)
     .toISOString()
@@ -650,6 +746,10 @@ function yearFromIso(d){
 
 function classesRemaining(n){
   return Math.max(REQUIRED - n, 0);
+}
+
+function stripeClassesRemaining(classesSinceStripe){
+  return Math.max(STRIPE_REQUIRED - classesSinceStripe, 0);
 }
 
 function beltStyle(belt){
@@ -688,7 +788,16 @@ function beltStyle(belt){
 function loadState(){
   try{
     const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved) return JSON.parse(saved);
+    if(saved){
+      const parsed = JSON.parse(saved);
+      // Migrate: add stripe fields to any kid missing them (safe for existing saves)
+      parsed.kids = parsed.kids.map(k => ({
+        currentStripe: 0,
+        classesSinceStripe: k.classesSincePromo || 0,
+        ...k
+      }));
+      return parsed;
+    }
   }catch(e){}
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
@@ -712,13 +821,31 @@ function setView(name){
   document.querySelector(`.tabbar button[data-view="${name}"]`).classList.add("active");
 }
 
+function renderStripeDots(currentStripe){
+  return Array.from({length: MAX_STRIPES}, (_, i) =>
+    `<div class="stripe-dot ${i < currentStripe ? "earned" : ""}"></div>`
+  ).join("");
+}
+
 function renderDashboard(){
   document.getElementById("tileGrid").innerHTML = state.kids.map(k => {
+    // Belt progress
     const rem = classesRemaining(k.classesSincePromo);
     const ready = rem === 0;
     const pct = Math.min((k.classesSincePromo / REQUIRED) * 100, 100);
     const statusClass = k.sick ? "sick" : (ready ? "ready" : "progress");
     const statusText = k.sick ? "Sick today" : (ready ? "Ready" : `${rem} left`);
+
+    // Stripe progress
+    const stripeMaxed = k.currentStripe >= MAX_STRIPES;
+    const stripeRem = stripeMaxed ? 0 : stripeClassesRemaining(k.classesSinceStripe);
+    const stripeEligible = !stripeMaxed && stripeRem === 0;
+    const stripeStatusClass = stripeMaxed ? "stripe-maxed" : (stripeEligible ? "stripe-ready" : "stripe-progress");
+    const stripeStatusText = stripeMaxed
+      ? "All stripes earned"
+      : stripeEligible
+        ? "Eligible to test"
+        : `${stripeRem} more needed`;
 
     return `
       <div class="card tile">
@@ -754,9 +881,25 @@ function renderDashboard(){
           </div>
         </div>
 
-        <div class="tile-actions">
+        <div class="stripe-section">
+          <div class="stripe-header">
+            <div class="stripe-label">Stripe Progress</div>
+            <div class="stripe-status ${stripeStatusClass}">${stripeStatusText}</div>
+          </div>
+          <div class="stripe-dots">
+            ${renderStripeDots(k.currentStripe)}
+          </div>
+          <div class="stripe-classes">
+            <strong>${Math.min(k.classesSinceStripe, STRIPE_REQUIRED)}</strong> / ${STRIPE_REQUIRED} classes toward next stripe
+          </div>
+        </div>
+
+        <div class="tile-actions-top">
           <button class="primary" onclick="markPresent(${k.id})">${k.attendedToday ? "Undo Present" : "Mark Present"}</button>
           <button onclick="toggleSick(${k.id})">${k.sick ? "Clear Sick" : "Mark Sick"}</button>
+        </div>
+        <div class="tile-actions-bottom">
+          <button class="stripe-btn" onclick="awardStripe(${k.id})" ${stripeMaxed ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}>+ Stripe</button>
           <button class="secondary" onclick="promoteKid(${k.id})">Promote</button>
         </div>
       </div>
@@ -886,10 +1029,11 @@ function markPresent(id){
 
     return {
       ...k,
-      attendedToday:turnOn,
-      sick:turnOn ? false : k.sick,
-      classesSincePromo:turnOn ? k.classesSincePromo + 1 : Math.max(k.classesSincePromo - 1, 0),
-      classes2026:turnOn ? incrementYearCount(k, today) : decrementYearCount(k, today)
+      attendedToday: turnOn,
+      sick: turnOn ? false : k.sick,
+      classesSincePromo: turnOn ? k.classesSincePromo + 1 : Math.max(k.classesSincePromo - 1, 0),
+      classesSinceStripe: turnOn ? k.classesSinceStripe + 1 : Math.max(k.classesSinceStripe - 1, 0),
+      classes2026: turnOn ? incrementYearCount(k, today) : decrementYearCount(k, today)
     };
   });
 
@@ -916,8 +1060,38 @@ function toggleSick(id){
 
     return {
       ...k,
-      sick:newSick,
-      attendedToday:false
+      sick: newSick,
+      attendedToday: false
+    };
+  });
+
+  saveState();
+  renderAll();
+}
+
+function awardStripe(id){
+  state.kids = state.kids.map(k => {
+    if(k.id !== id) return k;
+    if(k.currentStripe >= MAX_STRIPES) return k;
+    return {
+      ...k,
+      currentStripe: k.currentStripe + 1,
+      classesSinceStripe: 0  // reset stripe class counter after awarding
+    };
+  });
+
+  saveState();
+  renderAll();
+}
+
+function removeStripe(id){
+  state.kids = state.kids.map(k => {
+    if(k.id !== id) return k;
+    if(k.currentStripe <= 0) return k;
+    return {
+      ...k,
+      currentStripe: k.currentStripe - 1,
+      classesSinceStripe: 0
     };
   });
 
@@ -934,21 +1108,23 @@ function promoteKid(id){
 
     if(from !== to){
       state.promotionHistory.push({
-        id:Math.random().toString(36).slice(2),
-        date:isoToday(),
-        child:k.name,
+        id: Math.random().toString(36).slice(2),
+        date: isoToday(),
+        child: k.name,
         from,
         to,
-        note:"Progress reset after promotion."
+        note: "Progress reset after promotion."
       });
     }
 
     return {
       ...k,
-      belt:to,
-      classesSincePromo:0,
-      attendedToday:false,
-      sick:false
+      belt: to,
+      classesSincePromo: 0,
+      currentStripe: 0,         // stripes reset on belt promotion
+      classesSinceStripe: 0,
+      attendedToday: false,
+      sick: false
     };
   });
 
@@ -964,10 +1140,11 @@ function resetToday(){
       removeHistory(k.name, "present", today);
       return {
         ...k,
-        attendedToday:false,
-        sick:false,
-        classesSincePromo:Math.max(k.classesSincePromo - 1, 0),
-        classes2026:decrementYearCount(k, today)
+        attendedToday: false,
+        sick: false,
+        classesSincePromo: Math.max(k.classesSincePromo - 1, 0),
+        classesSinceStripe: Math.max(k.classesSinceStripe - 1, 0),
+        classes2026: decrementYearCount(k, today)
       };
     }
 
@@ -977,8 +1154,8 @@ function resetToday(){
 
     return {
       ...k,
-      attendedToday:false,
-      sick:false
+      attendedToday: false,
+      sick: false
     };
   });
 
