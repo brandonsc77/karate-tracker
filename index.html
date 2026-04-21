@@ -629,10 +629,10 @@ const STORAGE_KEY = "karate-tracker-2026-v10";
 
 const DEFAULT_STATE = {
   "kids": [
-    {"id":1,"name":"Caroline","belt":"Advanced Brown","classesSincePromo":4,"classes2026":20,"attendedToday":false,"sick":false,"currentStripe":0,"classesSinceStripe":4},
-    {"id":2,"name":"Viviann","belt":"Brown","classesSincePromo":29,"classes2026":20,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":29},
-    {"id":3,"name":"Addyson","belt":"Brown","classesSincePromo":28,"classes2026":19,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":28},
-    {"id":4,"name":"James","belt":"Brown","classesSincePromo":30,"classes2026":21,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":30}
+    {"id":1,"name":"Caroline","belt":"Advanced Brown","classesSincePromo":5,"classes2026":21,"attendedToday":false,"sick":false,"currentStripe":0,"classesSinceStripe":5},
+    {"id":2,"name":"Viviann","belt":"Brown","classesSincePromo":30,"classes2026":21,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":30},
+    {"id":3,"name":"Addyson","belt":"Brown","classesSincePromo":29,"classes2026":20,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":29},
+    {"id":4,"name":"James","belt":"Brown","classesSincePromo":31,"classes2026":22,"attendedToday":false,"sick":false,"currentStripe":2,"classesSinceStripe":31}
   ],
   "attendanceHistory": [
     {"id":"Caroline-2026-01-06-present","child":"Caroline","type":"present","date":"2026-01-06"},
@@ -715,6 +715,10 @@ const DEFAULT_STATE = {
     {"id":"James-2026-03-25-present","child":"James","type":"present","date":"2026-03-25"},
     {"id":"James-2026-04-14-present","child":"James","type":"present","date":"2026-04-14"},
     {"id":"James-2026-04-15-present","child":"James","type":"present","date":"2026-04-15"},
+    {"id":"Caroline-2026-04-20-present","child":"Caroline","type":"present","date":"2026-04-20"},
+    {"id":"Viviann-2026-04-20-present","child":"Viviann","type":"present","date":"2026-04-20"},
+    {"id":"Addyson-2026-04-20-present","child":"Addyson","type":"present","date":"2026-04-20"},
+    {"id":"James-2026-04-20-present","child":"James","type":"present","date":"2026-04-20"},
 
     {"id":"Caroline-2026-02-10-sick","child":"Caroline","type":"sick","date":"2026-02-10"},
     {"id":"Viviann-2026-02-10-sick","child":"Viviann","type":"sick","date":"2026-02-10"},
@@ -800,11 +804,16 @@ function loadState(){
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved){
       const parsed = JSON.parse(saved);
+      const today = isoToday();
+      const lastSaved = parsed.lastSavedDate || "";
       // Migrate: add stripe fields to any kid missing them (safe for existing saves)
+      // Also reset attendedToday/sick if the last save was from a previous day
       parsed.kids = parsed.kids.map(k => ({
         currentStripe: 0,
         classesSinceStripe: k.classesSincePromo || 0,
-        ...k
+        ...k,
+        attendedToday: lastSaved === today ? k.attendedToday : false,
+        sick: lastSaved === today ? k.sick : false
       }));
       return parsed;
     }
@@ -816,7 +825,10 @@ let state = loadState();
 let viewMonth = new Date(2026,2,1);
 
 function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...state,
+    lastSavedDate: isoToday()
+  }));
 }
 
 function nextBelt(current){
